@@ -4,8 +4,10 @@ import com.mello.nathalia.booksapi.api.mapper.BookMapper;
 import com.mello.nathalia.booksapi.api.request.BookRequest;
 import com.mello.nathalia.booksapi.common.exception.BookNotFoundException;
 import com.mello.nathalia.booksapi.common.exception.DuplicateBookException;
+import com.mello.nathalia.booksapi.common.exception.ErrorMessage;
 import com.mello.nathalia.booksapi.common.exception.InvalidBookException;
 import com.mello.nathalia.booksapi.domain.model.Book;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -13,6 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class BookService {
 
@@ -67,62 +70,82 @@ public class BookService {
                 .toList();
     }
 
-    public Optional<Book> getBookById(Long id) {
+    public Book getBookById(Long id) {
+        log.debug("Buscando livro com ID: {}", id);
+
         return books.stream()
-                .filter(book -> Objects.equals(book.getId(), id))
-                .findFirst();
+            .filter(book -> book.getId() == id)
+            .findFirst()
+            .map(book -> {
+                log.debug("Livro encontrado: {}", book.getTitle());
+                return book;
+            })
+            .orElseThrow(() -> {
+                log.warn("Livro com ID {} não encontrado", id);
+                return new BookNotFoundException(ErrorMessage.BOOK_NOT_FOUND.format(id));
+            });
     }
 
     public Book createBook(BookRequest bookRequest) {
-        validateBookRequest(bookRequest);
+        log.info("Iniciando criação de novo livro com título: {}", bookRequest.title());
 
-        boolean bookExists = books.stream()
-                .anyMatch(book ->
-                        book.getTitle().equalsIgnoreCase(bookRequest.title()) &&
-                                book.getAuthor().equalsIgnoreCase(bookRequest.author())
-                );
+        try {
+            validateDuplicateAuthorAndTitle(bookRequest.author(), bookRequest.title());
+            validateRatingBookRequest(bookRequest);
+            boolean bookExists = books.stream()
+                    .anyMatch(book ->
+                            book.getTitle().equalsIgnoreCase(bookRequest.title()) &&
+                                    book.getAuthor().equalsIgnoreCase(bookRequest.author())
+                    );
+            if(bookExists) {
+                log.warn("Tentativa de criar livro com título duplicado: {}", bookRequest.title());
+                throw new DuplicateBookException(ErrorMessage.AUTHOR_DUPLICATE_BOOK
+                        .format(bookRequest.author(), bookRequest.title()));
+            }
 
-        if(bookExists) {
-            throw new DuplicateBookException("Já existe um livro com o título: " + bookRequest.title() +
-                    " do autor: " + bookRequest.author());
+            Book newBook = bookMapper.toEntity(bookRequest);
+            newBook.setId(nextId++);
+            books.add(newBook);
+            return newBook;
+        } catch (Exception e) {
+            log.error("Erro ao criar livro com título: {}", bookRequest.title(), e);
+            throw e;
         }
-
-        Book newBook = bookMapper.toEntity(bookRequest);
-        newBook.setId(nextId++);
-        books.add(newBook);
-        return newBook;
     }
 
     public Book updateBookById(Long id, BookRequest updatedBook) {
+        Book book = getBookById(id);
 
-        validateBookRequest(updatedBook);
-
-        Book book = getBookById(id)
-                .orElseThrow(() -> new BookNotFoundException("Livro com o ID " + id + " não encontrado"));
-
-        boolean duplicatedExists = books.stream()
-                .anyMatch(b -> !Objects.equals(b.getId(), id)
-                        && b.getTitle().equalsIgnoreCase(updatedBook.title()));
-
-        if (duplicatedExists) {
-            throw new DuplicateBookException("Já existe outro livro com o título: " + updatedBook.title() + ".");
-        }
+        validateRatingBookRequest(updatedBook);
 
         bookMapper.updateBookFromRequest(updatedBook, book);
         return book;
+
     }
 
     public void deleteBookById(Long id) {
-        Book book = getBookById(id)
-                .orElseThrow(() -> new BookNotFoundException("Livro com ID " + id + " não encontrado"));
+        Book book = getBookById(id);
         books.remove(book);
     }
 
 
-    private void validateBookRequest(BookRequest bookRequest) {
+    private void validateRatingBookRequest(BookRequest bookRequest) {
         if (bookRequest.rating() < 0 || bookRequest.rating() > 5) {
-            throw new InvalidBookException("A classificação deve estar entre 0 e 5");
+            throw new InvalidBookException(ErrorMessage.RATING_IS_MANDATORY_BETWEEN_0_TO_5.getMessage());
         }
     }
+
+    private void validateDuplicateAuthorAndTitle(String author, String title) {
+        books.stream()
+            .filter(b -> b.getAuthor().equalsIgnoreCase(author))
+            .filter(b -> b.getTitle().equalsIgnoreCase(title))
+            .findAny()
+            .ifPresent(book -> {
+                throw new DuplicateBookException(
+                        ErrorMessage.AUTHOR_DUPLICATE_BOOK.format(author, title)
+                );
+            });
+    }
+
 
 }
