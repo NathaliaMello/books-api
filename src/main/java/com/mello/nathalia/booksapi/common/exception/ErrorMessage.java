@@ -1,5 +1,8 @@
 package com.mello.nathalia.booksapi.common.exception;
 
+import lombok.Getter;
+
+@Getter
 public enum ErrorMessage {
     BOOK_NOT_FOUND("Livro com o ID '%d' não encontrado"),
     INVALID_BOOK_DATA("Dados inválidos fornecidos"),
@@ -18,7 +21,4 @@ public enum ErrorMessage {
         return String.format(message, args);
     }
 
-    public String getMessage() {
-        return message;
-    }
 }
