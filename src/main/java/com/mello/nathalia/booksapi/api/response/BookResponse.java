@@ -1,9 +1,15 @@
 package com.mello.nathalia.booksapi.api.response;
 
+import java.time.LocalDateTime;
+import java.util.Set;
+
 public record BookResponse(
-        long id,
+        Long id,
         String title,
         String author,
-        String category,
-        double rating
-){}
+        Set<CategoryResponse> categories,
+        String isbn,
+        String description,
+        Double rating,
+        LocalDateTime createdAt
+) {}

@@ -1,7 +1,8 @@
 package com.mello.nathalia.booksapi.api.controller;
 
 import com.mello.nathalia.booksapi.api.mapper.BookMapper;
-import com.mello.nathalia.booksapi.api.request.BookRequest;
+import com.mello.nathalia.booksapi.api.request.CreateBookRequest;
+import com.mello.nathalia.booksapi.api.request.UpdateBookRequest;
 import com.mello.nathalia.booksapi.api.response.BookResponse;
 import com.mello.nathalia.booksapi.common.response.ErrorResponse;
 import com.mello.nathalia.booksapi.domain.model.Book;
@@ -9,11 +10,10 @@ import com.mello.nathalia.booksapi.domain.service.BookService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,7 +21,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/books")
-@Tag(name = "Books", description = "API para gerenciamento de livros")
 public class BookController {
 
     private final BookService bookService;
@@ -36,26 +35,21 @@ public class BookController {
     @Operation(summary = "Listar todos os livros",
             description = "Retorna uma lista de livros com possibilidade de filtrar por título, autor ou categoria")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", 
+            @ApiResponse(responseCode = "200",
                     description = "Livros encontrados com sucesso",
-                    content = @Content(mediaType = "application/json", 
+                    content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = BookResponse.class))),
-            @ApiResponse(responseCode = "400", 
+            @ApiResponse(responseCode = "400",
                     description = "Parâmetros de filtro inválidos",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<List<BookResponse>> getAllBooks(
-            @RequestParam(name = "title", required = false) String title,
-            @RequestParam(name = "author", required = false) String author,
-            @RequestParam(name = "category", required = false) String category
-    ) {
-        List<Book> books = bookService.filterBooks(title, author, category);
-        List<BookResponse> response = books.stream()
-                .map(bookMapper::toResponse)
-                .toList();
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<List<BookResponse>> findAll(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String author,
+            @RequestParam(required = false) Long categoryId) {
+        List<Book> books = bookService.findWithFilters(title, author, categoryId);
+        return ResponseEntity.ok(bookMapper.toResponseList(books));
     }
 
     @GetMapping("/{id}")
@@ -65,21 +59,22 @@ public class BookController {
             @ApiResponse(responseCode = "200",
                     description = "Livro encontrado com sucesso",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = Book.class))),
+                            schema = @Schema(implementation = BookResponse.class))), // Book -> BookResponse
             @ApiResponse(responseCode = "404",
                     description = "Livro não encontrado",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<Book> getBookById(@PathVariable Long id) {
-        return ResponseEntity.ok(bookService.getBookById(id));
+    public ResponseEntity<BookResponse> getBookById(@PathVariable Long id) { // ResponseEntity<Book> -> ResponseEntity<BookResponse>
+        Book book = bookService.getBookById(id);
+        return ResponseEntity.ok(bookMapper.toResponse(book));
     }
 
     @PostMapping
     @Operation(summary = "Criar novo livro",
             description = "Cria um novo livro na base de dados")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200",
+            @ApiResponse(responseCode = "201",                                       // 200 -> 201
                     description = "Livro criado com sucesso",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = BookResponse.class))),
@@ -93,10 +88,11 @@ public class BookController {
                             schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<BookResponse> createBook(
-            @RequestBody(description = "Dados do livro a ser criado", required = true) 
-            @Valid @org.springframework.web.bind.annotation.RequestBody BookRequest bookRequest) {
-        Book newBook = bookService.createBook(bookRequest);
-        return ResponseEntity.ok(bookMapper.toResponse(newBook));
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Dados do livro a ser criado", required = true)
+            @Valid @org.springframework.web.bind.annotation.RequestBody CreateBookRequest request) {
+        Book newBook = bookService.create(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookMapper.toResponse(newBook));
     }
 
     @PutMapping("/{id}")
@@ -112,14 +108,16 @@ public class BookController {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404",
-                    description = "Livro não encontrado",content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = ErrorResponse.class)))
+                    description = "Livro não encontrado",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<BookResponse> updateBookById(
             @PathVariable Long id,
-            @RequestBody(description = "Dados atualizados do livro", required = true)
-            @Valid @org.springframework.web.bind.annotation.RequestBody BookRequest updateBook) {
-        Book updatedBook = bookService.updateBookById(id, updateBook);
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Dados atualizados do livro", required = true)
+            @Valid @org.springframework.web.bind.annotation.RequestBody UpdateBookRequest request) {        // CreateBookRequest -> UpdateBookRequest
+        Book updatedBook = bookService.update(id, request);
         return ResponseEntity.ok(bookMapper.toResponse(updatedBook));
     }
 
@@ -132,10 +130,10 @@ public class BookController {
             @ApiResponse(responseCode = "404",
                     description = "Livro não encontrado",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorResponse.class))),
+                            schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<Void> deleteBookById(@PathVariable Long id) {
-        bookService.deleteBookById(id);
+        bookService.delete(id);
         return ResponseEntity.noContent().build();
     }
 

@@ -9,7 +9,9 @@ public enum ErrorMessage {
     AUTHOR_NOT_FOUND("Autor com o ID '%d' não encontrado"),
     BOOK_ALREADY_EXISTS("Livro com o título '%s' já existe"),
     RATING_IS_MANDATORY_BETWEEN_0_TO_5("A classificação deve estar entre 0 e 5"),
-    AUTHOR_DUPLICATE_BOOK("O Autor '%s' já possui livro com o título '%s'");
+    AUTHOR_DUPLICATE_BOOK("O Autor '%s' já possui livro com o título '%s'"),
+    CATEGORY_NOT_FOUND("Categoria com o ID '%d' não encontrada"),           // novo
+    CATEGORY_ALREADY_EXISTS("Já existe uma categoria com o nome '%s'");     // novo
 
     private final String message;
 

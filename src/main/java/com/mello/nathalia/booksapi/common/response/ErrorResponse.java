@@ -1,17 +1,37 @@
 package com.mello.nathalia.booksapi.common.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
-@AllArgsConstructor
-@Getter
-@Setter
-public class ErrorResponse {
+public record ErrorResponse(
+        String timestamp,
+        int status,
+        String error,
+        String message,
+        String path,
+        List<FieldErrorResponse> fields
+) {
+    public ErrorResponse(int status, String error, String message, String path) {
+        this(
+                LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),
+                status,
+                error,
+                message,
+                path,
+                null
+        );
+    }
 
-    private String timestamp;
-    private int status;
-    private String message;
-    private String error;
-    private String path;
+    public ErrorResponse(int status, String error, String message, String path,
+                         List<FieldErrorResponse> fields) {
+        this(
+                LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),
+                status,
+                error,
+                message,
+                path,
+                fields
+        );
+    }
 }
