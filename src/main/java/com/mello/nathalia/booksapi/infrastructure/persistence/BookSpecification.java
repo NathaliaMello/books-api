@@ -1,6 +1,10 @@
 package com.mello.nathalia.booksapi.infrastructure.persistence;
 
 import com.mello.nathalia.booksapi.domain.model.Book;
+import com.mello.nathalia.booksapi.domain.model.Category;
+
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
 
 public class BookSpecification {
@@ -12,7 +16,7 @@ public class BookSpecification {
         return Specification
                 .where(hasTitle(title))
                 .and(hasAuthor(author))
-                .and(hasCategoryId(categoryId));
+                .and(hasCategory(categoryId));
 
     }
 
@@ -30,10 +34,11 @@ public class BookSpecification {
         };
     }
 
-    private static Specification<Book> hasCategoryId(Long categoryId) {
+    private static Specification<Book> hasCategory(Long categoryId) {
         return (root, query, cb) -> {
             if (categoryId == null) return null;
-            return cb.equal(root.get("category").get("id"), categoryId);
+            Join<Book, Category> categories = root.join("categories", JoinType.INNER);
+            return cb.equal(categories.get("id"), categoryId);
         };
     }
 
