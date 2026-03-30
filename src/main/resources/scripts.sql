@@ -27,6 +27,15 @@ CREATE TABLE book_categories (
      FOREIGN KEY (category_id) REFERENCES categories(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE users (
+       id         BIGINT PRIMARY KEY AUTO_INCREMENT,
+       name       VARCHAR(100) NOT NULL,
+       email      VARCHAR(255) NOT NULL UNIQUE,
+       password   VARCHAR(255) NOT NULL,
+       role       ENUM('ADMIN', 'USER') NOT NULL DEFAULT 'USER',
+       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Inserir os dados novamente
 INSERT INTO categories (name) VALUES
       ('Tecnologia e Programação'),
@@ -49,3 +58,4 @@ INSERT INTO categories (name) VALUES
       ('Poesia'),
       ('Culinária'),
       ('Arte e Design');
+
