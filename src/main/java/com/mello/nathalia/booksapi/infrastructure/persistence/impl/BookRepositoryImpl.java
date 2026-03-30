@@ -51,9 +51,19 @@ public class BookRepositoryImpl implements BookRepository {
     }
 
     @Override
-    public @NonNull List<Book> findWithCursor(@Nullable Long cursor, int size) {
+    public @NonNull List<Book> findWithCursor(
+            @Nullable Long cursor,
+            int size,
+            @Nullable String title,
+            @Nullable String author,
+            @Nullable Long categoryId) {
+
         List<Long> ids = jpaRepository.findIdsByCursor(
                 cursor,
+                size,
+                title,
+                author,
+                categoryId,
                 PageRequest.of(0, size)
         );
 

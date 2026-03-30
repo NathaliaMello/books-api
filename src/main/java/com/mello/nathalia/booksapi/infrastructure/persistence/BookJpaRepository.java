@@ -24,12 +24,21 @@ public interface BookJpaRepository extends JpaRepository<Book, Long>, JpaSpecifi
     List<Book> findByCategories_Id(@NonNull Long categoryId);
 
     @Query("""
-        SELECT b.id FROM Book b
-        WHERE (:cursor IS NULL OR b.id > :cursor)
-        ORDER BY b.id ASC
-    """)
+    SELECT b.id FROM Book b
+    WHERE (:cursor IS NULL OR b.id > :cursor)
+    AND (:title IS NULL OR LOWER(b.title) LIKE LOWER(CONCAT('%', :title, '%')))
+    AND (:author IS NULL OR LOWER(b.author) LIKE LOWER(CONCAT('%', :author, '%')))
+    AND (:categoryId IS NULL OR EXISTS (
+        SELECT 1 FROM b.categories c WHERE c.id = :categoryId
+    ))
+    ORDER BY b.id ASC
+""")
     List<Long> findIdsByCursor(
             @Nullable @Param("cursor") Long cursor,
+            @Param("size") int size,
+            @Nullable @Param("title") String title,
+            @Nullable @Param("author") String author,
+            @Nullable @Param("categoryId") Long categoryId,
             Pageable pageable
     );
 

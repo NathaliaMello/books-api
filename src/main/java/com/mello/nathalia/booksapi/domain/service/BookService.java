@@ -107,8 +107,9 @@ public class BookService {
         bookRepository.delete(book);
     }
 
-    public CursorPageResponse<BookResponse> findWithCursor(@Nullable Long cursor, int size) {
-        List<Book> books = bookRepository.findWithCursor(cursor, size);
+    public CursorPageResponse<BookResponse> findWithCursor(
+            @Nullable Long cursor, int size, String title, String author, Long categoryId) {
+        List<Book> books = bookRepository.findWithCursor(cursor, size, title, author, categoryId);
 
         List<BookResponse> content = books.stream()
                 .map(bookMapper::toResponse)

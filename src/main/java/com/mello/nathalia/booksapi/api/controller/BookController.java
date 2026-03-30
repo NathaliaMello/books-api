@@ -54,18 +54,13 @@ public class BookController {
     }
 
     @GetMapping("/cursor")
-    @Operation(summary = "Listar livros com cursor",
-            description = "Retorna livros paginados por cursor para melhor performance")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200",
-                    description = "Livros retornados com sucesso",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = CursorPageResponse.class)))
-    })
     public ResponseEntity<CursorPageResponse<BookResponse>> findWithCursor(
             @RequestParam(required = false) Long cursor,
-            @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(bookService.findWithCursor(cursor, size));
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) String author,
+            @RequestParam(required = false) Long categoryId) {
+        return ResponseEntity.ok(bookService.findWithCursor(cursor, size, title, author, categoryId));
     }
 
     @GetMapping("/{id}")
