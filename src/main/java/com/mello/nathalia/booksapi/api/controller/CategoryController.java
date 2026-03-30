@@ -4,6 +4,7 @@ import com.mello.nathalia.booksapi.api.mapper.CategoryMapper;
 import com.mello.nathalia.booksapi.api.request.CreateCategoryRequest;
 import com.mello.nathalia.booksapi.api.request.UpdateCategoryRequest;
 import com.mello.nathalia.booksapi.api.response.CategoryResponse;
+import com.mello.nathalia.booksapi.common.response.PageResponse;
 import com.mello.nathalia.booksapi.domain.model.Category;
 import com.mello.nathalia.booksapi.domain.service.CategoryService;
 import jakarta.validation.Valid;
@@ -52,6 +53,13 @@ public class CategoryController {
     public ResponseEntity<List<CategoryResponse>> findAll() {
         List<Category> categories = categoryService.findAll();
         return ResponseEntity.ok(categoryMapper.toResponseList(categories));
+    }
+
+    @GetMapping("/paginated")
+    public ResponseEntity<PageResponse<CategoryResponse>> findAllPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(categoryService.findAllPaginated(page, size));
     }
 
     @DeleteMapping("/{id}")
