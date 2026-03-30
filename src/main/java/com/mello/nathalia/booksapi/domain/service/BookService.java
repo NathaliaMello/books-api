@@ -3,15 +3,17 @@ package com.mello.nathalia.booksapi.domain.service;
 import com.mello.nathalia.booksapi.api.mapper.BookMapper;
 import com.mello.nathalia.booksapi.api.request.CreateBookRequest;
 import com.mello.nathalia.booksapi.api.request.UpdateBookRequest;
+import com.mello.nathalia.booksapi.api.response.BookResponse;
 import com.mello.nathalia.booksapi.common.exception.BookNotFoundException;
-import com.mello.nathalia.booksapi.common.exception.CategoryNotFoundException;
 import com.mello.nathalia.booksapi.common.exception.DuplicateBookException;
 import com.mello.nathalia.booksapi.common.exception.ErrorMessage;
+import com.mello.nathalia.booksapi.common.response.CursorPageResponse;
 import com.mello.nathalia.booksapi.domain.model.Book;
 import com.mello.nathalia.booksapi.domain.model.Category;
 import com.mello.nathalia.booksapi.domain.repository.BookRepository;
 import com.mello.nathalia.booksapi.infrastructure.client.googlebooks.GoogleBooksClient;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -103,6 +105,20 @@ public class BookService {
         log.debug("Deletando livro com ID: {}", id);
         Book book = getBookById(id);
         bookRepository.delete(book);
+    }
+
+    public CursorPageResponse<BookResponse> findWithCursor(@Nullable Long cursor, int size) {
+        List<Book> books = bookRepository.findWithCursor(cursor, size);
+
+        List<BookResponse> content = books.stream()
+                .map(bookMapper::toResponse)
+                .toList();
+
+        Long nextCursor = books.isEmpty()
+                ? null
+                : books.getLast().getId();
+
+        return CursorPageResponse.of(content, size, nextCursor);
     }
 
 }

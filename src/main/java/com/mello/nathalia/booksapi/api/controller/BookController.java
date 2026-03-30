@@ -4,6 +4,7 @@ import com.mello.nathalia.booksapi.api.mapper.BookMapper;
 import com.mello.nathalia.booksapi.api.request.CreateBookRequest;
 import com.mello.nathalia.booksapi.api.request.UpdateBookRequest;
 import com.mello.nathalia.booksapi.api.response.BookResponse;
+import com.mello.nathalia.booksapi.common.response.CursorPageResponse;
 import com.mello.nathalia.booksapi.common.response.ErrorResponse;
 import com.mello.nathalia.booksapi.domain.model.Book;
 import com.mello.nathalia.booksapi.domain.service.BookService;
@@ -50,6 +51,21 @@ public class BookController {
             @RequestParam(required = false) Long categoryId) {
         List<Book> books = bookService.findWithFilters(title, author, categoryId);
         return ResponseEntity.ok(bookMapper.toResponseList(books));
+    }
+
+    @GetMapping("/cursor")
+    @Operation(summary = "Listar livros com cursor",
+            description = "Retorna livros paginados por cursor para melhor performance")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Livros retornados com sucesso",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = CursorPageResponse.class)))
+    })
+    public ResponseEntity<CursorPageResponse<BookResponse>> findWithCursor(
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(bookService.findWithCursor(cursor, size));
     }
 
     @GetMapping("/{id}")
