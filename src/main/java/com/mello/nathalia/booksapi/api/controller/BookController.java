@@ -2,12 +2,16 @@ package com.mello.nathalia.booksapi.api.controller;
 
 import com.mello.nathalia.booksapi.api.mapper.BookMapper;
 import com.mello.nathalia.booksapi.api.request.CreateBookRequest;
+import com.mello.nathalia.booksapi.api.request.RatingRequest;
 import com.mello.nathalia.booksapi.api.request.UpdateBookRequest;
 import com.mello.nathalia.booksapi.api.response.BookResponse;
+import com.mello.nathalia.booksapi.api.response.RatingResponse;
 import com.mello.nathalia.booksapi.common.response.CursorPageResponse;
 import com.mello.nathalia.booksapi.common.response.ErrorResponse;
 import com.mello.nathalia.booksapi.domain.model.Book;
+import com.mello.nathalia.booksapi.domain.model.User;
 import com.mello.nathalia.booksapi.domain.service.BookService;
+import com.mello.nathalia.booksapi.domain.service.RatingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -16,6 +20,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,10 +31,12 @@ public class BookController {
 
     private final BookService bookService;
     private final BookMapper bookMapper;
+    private final RatingService ratingService;
 
-    public BookController(BookService bookService, BookMapper bookMapper) {
+    public BookController(BookService bookService, BookMapper bookMapper, RatingService ratingService) {
         this.bookService = bookService;
         this.bookMapper = bookMapper;
+        this.ratingService = ratingService;
     }
 
     @GetMapping
@@ -146,6 +153,39 @@ public class BookController {
     public ResponseEntity<Void> deleteBookById(@PathVariable Long id) {
         bookService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/rating")
+    @Operation(summary = "Avaliar livro", description = "Usuário autenticado avalia um livro")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Avaliação registrada com sucesso",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = BookResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Não autenticado",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Livro não encontrado",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    public ResponseEntity<BookResponse> rate(
+            @PathVariable Long id,
+            @RequestBody @Valid RatingRequest request,
+            @AuthenticationPrincipal User user) {
+        Book book = ratingService.rate(id, request.rating(), user);
+        return ResponseEntity.ok(bookMapper.toResponse(book));
+    }
+
+    @GetMapping("/{id}/rating/me")
+    public ResponseEntity<RatingResponse> getMyRating(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
+
+        if (user == null) return ResponseEntity.noContent().build();
+
+        return ratingService.getMyRating(id, user)
+                .map(rating -> ResponseEntity.ok(new RatingResponse(rating)))
+                .orElse(ResponseEntity.noContent().build());
     }
 
 }

@@ -1,5 +1,6 @@
 package com.mello.nathalia.booksapi.api.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -10,6 +11,7 @@ public record BookResponse(
         Set<CategoryResponse> categories,
         String isbn,
         String description,
-        Double rating,
+        BigDecimal rating,
+        Integer ratingCount,
         LocalDateTime createdAt
 ) {}

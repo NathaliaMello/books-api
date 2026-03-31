@@ -36,6 +36,24 @@ CREATE TABLE users (
        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE book_ratings (
+      id         BIGINT PRIMARY KEY AUTO_INCREMENT,
+      book_id    BIGINT NOT NULL,
+      user_id    BIGINT NOT NULL,
+      rating     DECIMAL(3,1) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE KEY unique_book_user (book_id, user_id)
+);
+
+ALTER TABLE books DROP COLUMN rating;
+
+ALTER TABLE books ADD COLUMN rating DECIMAL(3,1) DEFAULT NULL;
+ALTER TABLE books ADD COLUMN rating_count INT DEFAULT 0;
+
+
 -- Inserir os dados novamente
 INSERT INTO categories (name) VALUES
       ('Tecnologia e Programação'),

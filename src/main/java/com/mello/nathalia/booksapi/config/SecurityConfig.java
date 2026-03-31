@@ -19,6 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -30,9 +31,10 @@ public class SecurityConfig {
     private static final String BOOKS_PATH = "/api/v1/books/**";
     private static final String CATEGORIES_PATH = "/api/v1/categories/**";
     private static final String BOOK_RATING_PATH = "/api/v1/books/*/rating";
+    private static final String BOOK_MY_RATING_PATH = "/api/v1/books/*/rating/me";
 
     private static final String[] PUBLIC_PATHS = {
-            "/auth/**",
+            "/api/v1/auth/**",
             "/docs/**",
             "/v3/api-docs/**",
             "/swagger-ui/**"
@@ -40,10 +42,12 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final UserService userService;
+    private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) {
         return http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -59,7 +63,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, CATEGORIES_PATH).hasRole(ROLE_ADMIN)
                         .requestMatchers(HttpMethod.PUT, CATEGORIES_PATH).hasRole(ROLE_ADMIN)
                         .requestMatchers(HttpMethod.DELETE, CATEGORIES_PATH).hasRole(ROLE_ADMIN)
-                        .requestMatchers(HttpMethod.PATCH,BOOK_RATING_PATH).hasRole(ROLE_ADMIN)
+                        .requestMatchers(HttpMethod.PATCH, BOOK_RATING_PATH).authenticated()
+                        .requestMatchers(HttpMethod.GET, BOOK_MY_RATING_PATH).authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

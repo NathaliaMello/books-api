@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -31,7 +32,11 @@ public class Book {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private Double rating;
+    @Column(precision = 3, scale = 1)
+    private BigDecimal rating;
+
+    @Column(name = "rating_count")
+    private Integer ratingCount = 0;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
