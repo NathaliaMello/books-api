@@ -7,6 +7,7 @@ import com.mello.nathalia.booksapi.api.response.BookResponse;
 import com.mello.nathalia.booksapi.common.exception.BookNotFoundException;
 import com.mello.nathalia.booksapi.common.exception.DuplicateBookException;
 import com.mello.nathalia.booksapi.common.exception.ErrorMessage;
+import com.mello.nathalia.booksapi.common.exception.InvalidBookException;
 import com.mello.nathalia.booksapi.common.response.CursorPageResponse;
 import com.mello.nathalia.booksapi.domain.model.Book;
 import com.mello.nathalia.booksapi.domain.model.Category;
@@ -74,6 +75,12 @@ public class BookService {
                         book.setIsbn(data.isbn());
                     }
                 });
+
+        if (book.getIsbn() == null || book.getIsbn().isBlank()) {
+            throw new InvalidBookException(
+                    "ISBN é obrigatório. Informe o ISBN ou verifique se o título e autor estão corretos para busca automática."
+            );
+        }
 
         if (bookRepository.findByIsbn(book.getIsbn()).isPresent()) {
             throw new DuplicateBookException(
