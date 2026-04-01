@@ -2,6 +2,7 @@ package com.mello.nathalia.booksapi.infrastructure.security;
 
 import com.mello.nathalia.booksapi.domain.model.User;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -37,9 +38,13 @@ public class JwtService {
     }
 
     public boolean isValid(String token, UserDetails userDetails) {
-        String email = extractEmail(token);
-        return email.equals(userDetails.getUsername())
-                && !isExpired(token);
+        try {
+            String email = extractEmail(token);
+            return email.equals(userDetails.getUsername())
+                    && !isExpired(token);
+        } catch (ExpiredJwtException e) {
+            return false;
+        }
     }
 
     private boolean isExpired(String token) {
